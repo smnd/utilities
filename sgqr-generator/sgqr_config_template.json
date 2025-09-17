@@ -1,0 +1,95 @@
+{
+  "merchant_name": "SAMPLE MERCHANT",
+  "merchant_city": "Singapore",
+  "merchant_postal_code": "018956",
+  "merchant_category_code": "5814",
+  "country_code": "SG",
+  "currency": "702",
+  "initiation_method": "11",
+  "comment": "11=Static QR, 12=Dynamic QR.",
+  "amount": "10.50",
+  "output_file": "sample_sgqr.png",
+  "sgqr_id": {
+    "sgqr_number": "250815061234",
+    "version": "01.0001",
+    "postal_code": "018956",
+    "level": "01",
+    "unit": "25",
+    "misc": "0001",
+    "revision_date": "20250102",
+    "comment": "SGQR number, version and revisition date will not be available to us. Will test if this is mandatory. The rest of the items may also be skipped. Will test."
+  },
+  "payment_systems": [
+    {
+      "name": "NETS",
+      "global_identifier": "SG.COM.NETS",
+      "comment": "Not relevant for SG POS",
+      "fields": [
+        {
+          "id": "01",
+          "value": "1198500065G991231235900"
+        },
+        {
+          "id": "02",
+          "value": "11101045003"
+        },
+        {
+          "id": "03",
+          "value": "23077293"
+        },
+        {
+          "id": "99",
+          "value": "7F1CF13F"
+        }
+      ]
+    },
+    {
+      "name": "GrabPay",
+      "global_identifier": "com.grab",
+      "fields": [
+        {
+          "id": "01",
+          "value": "A93FO3230Q"
+        }
+      ]
+    },
+    {
+      "name": "Fave",
+      "global_identifier": "com.myfave",
+      "fields": [
+        {
+          "id": "01",
+          "value": "https://myfave.com/qr/sample"
+        }
+      ]
+    },
+    {
+      "name": "PayNow",
+      "preferred_id": "36",
+      "global_identifier": "SG.PAYNOW",
+      "fields": [
+        {
+          "id": "01",
+          "value": "0",
+          "comment": "proxy type - 0=MobileNumber, 1=not used, 2=UEN"
+          
+        },
+        {
+          "id": "02",
+          "value": "+6597380048 OR 201002456D",
+          "comment": "proxy value - mobile number is <International Dialling Code preceding with '+'> plus <up to 15 digit Mobile Number>; UEN is 10/13 alphanumeric characters"
+        },
+        {
+          "id": "03",
+          "value": "1",
+          "comment": "Editable amount indicator - 0=non-editable (mandatory for dynamic QR), 1=editable."
+        },
+        {
+          "id": "04",
+          "value": "123456789012",
+          "comment": "Use for transaction reference, like omni-reference."
+        }
+      ]
+    }
+  ]
+}

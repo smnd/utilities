@@ -1,0 +1,61 @@
+{
+  "merchant_name": "SAMPLE MERCHANT",
+  "merchant_city": "Singapore",
+  "merchant_postal_code": "018956",
+  "merchant_category_code": "5814",
+  "country_code": "SG",
+  "currency": "702",
+  "initiation_method": "12",
+  "comment": "11=Static QR, 12=Dynamic QR.",
+  "amount": "1.00",
+  "output_file": "sample_sgqr.png",
+  "sgqr_id": {
+    "sgqr_number": "",
+    "version": "",
+    "postal_code": "",
+    "level": "",
+    "unit": "",
+    "misc": "",
+    "revision_date": "",
+    "comment": "SGQR number, version and revisition date will not be available to us. Will test if this is mandatory. The rest of the items may also be skipped. Will test."
+  },
+  "payment_systems": [
+    {
+      "name": "Fave",
+      "global_identifier": "com.myfave",
+      "fields": [
+        {
+          "id": "01",
+          "value": "https://myfave.com/qr/n2uve5"
+        }
+      ]
+    },
+    {
+      "name": "PayNow",
+      "global_identifier": "SG.PAYNOW",
+      "fields": [
+        {
+          "id": "01",
+          "value": "2",
+          "comment": "proxy type - 0=MobileNumber, 1=not used, 2=UEN"
+          
+        },
+        {
+          "id": "02",
+          "value": "201002456D",
+          "comment": "proxy value - mobile number is <International Dialling Code preceding with '+'> plus <up to 15 digit Mobile Number>; UEN is 10/13 alphanumeric characters"
+        },
+        {
+          "id": "03",
+          "value": "0",
+          "comment": "Editable amount indicator - 0=non-editable (mandatory for dynamic QR), 1=editable."
+        },
+        {
+          "id": "04",
+          "value": "123456789012",
+          "comment": "Use for transaction reference, like omni-reference."
+        }
+      ]
+    }
+  ]
+}
