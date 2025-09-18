@@ -16,6 +16,56 @@ class SGQRGenerator:
     with Singapore-specific extensions
     """
     
+    TOP_LEVEL_TAG_NAMES = {
+        "00": "Payload Format Indicator",
+        "01": "Point of Initiation Method",
+        "51": "SGQR ID",
+        "52": "Merchant Category Code",
+        "53": "Transaction Currency",
+        "54": "Transaction Amount",
+        "55": "Tip or Convenience Indicator",
+        "56": "Value of Convenience Fee Fixed",
+        "57": "Value of Convenience Fee Percentage",
+        "58": "Country Code",
+        "59": "Merchant Name",
+        "60": "Merchant City",
+        "61": "Postal Code",
+        "62": "Additional Data Field Template",
+        "63": "CRC",
+        "64": "Merchant Information - Language Template"
+    }
+
+    MERCHANT_ACCOUNT_TAGS = {f"{i:02d}" for i in range(26, 46)}
+
+    SGQR_ID_SUBTAG_NAMES = {
+        "00": "SGQR Globally Unique Identifier",
+        "01": "SGQR ID Number",
+        "02": "SGQR Version",
+        "03": "Merchant Postal Code",
+        "04": "Merchant Level",
+        "05": "Merchant Unit",
+        "06": "Miscellaneous",
+        "07": "Revision Date"
+    }
+
+    ADDITIONAL_DATA_SUBTAG_NAMES = {
+        "01": "Bill Number",
+        "02": "Mobile Number",
+        "03": "Store Label",
+        "04": "Loyalty Number",
+        "05": "Reference Label",
+        "06": "Customer Label",
+        "07": "Terminal Label",
+        "08": "Purpose of Transaction",
+        "09": "Additional Consumer Data Request"
+    }
+
+    MERCHANT_LANGUAGE_SUBTAG_NAMES = {
+        "00": "Language Preference",
+        "01": "Merchant Name - Alternate Language",
+        "02": "Merchant City - Alternate Language"
+    }
+
     # CRC parameters for ISO/IEC 13239
     CRC_POLYNOMIAL = 0x1021
     CRC_INIT_VALUE = 0xFFFF
@@ -125,7 +175,7 @@ class SGQRGenerator:
         """
         data_objects = []
         
-        print(f"Generating payment system: {payment_system}") # Debug statement
+        # print(f"Generating payment system: {payment_system}") # Debug statement
         
         # Global Unique Identifier (required)
         data_objects.append({
@@ -212,15 +262,41 @@ class SGQRGenerator:
         if "merchant_postal_code" in config:
             payload += self.encode_tlv("61", config["merchant_postal_code"])
         
-        # 12. Additional Data Field Template (optional)
-        if "additional_data" in config:
-            additional_data = ""
-            for field in config["additional_data"]:
-                additional_data += self.encode_tlv(field["id"], field["value"])
-            if additional_data:
-                payload += self.encode_tlv("62", additional_data)
-        
-        # 13. Calculate and append CRC
+        # 12. Additional Data Field Template (optional, IDs 01-09)
+        additional_data_config = config.get("additional_data")
+        valid_additional_data_ids = {f"{i:02d}" for i in range(1, 10)}
+        additional_data_value = ""
+
+        if isinstance(additional_data_config, dict):
+            for field_id in sorted(additional_data_config.keys()):
+                normalized_id = str(field_id).zfill(2)
+                if normalized_id not in valid_additional_data_ids:
+                    continue
+                field_value = additional_data_config[field_id]
+                if field_value is None or field_value == "":
+                    continue
+                additional_data_value += self.encode_tlv(normalized_id, str(field_value))
+        elif isinstance(additional_data_config, list):
+            for field in additional_data_config:
+                field_id = str(field.get("id", "")).zfill(2)
+                if field_id not in valid_additional_data_ids:
+                    continue
+                field_value = field.get("value")
+                if field_value is None or field_value == "":
+                    continue
+                additional_data_value += self.encode_tlv(field_id, str(field_value))
+
+        if additional_data_value:
+            payload += self.encode_tlv("62", additional_data_value)
+
+        # 13. Merchant Information - Language Template (ID "64")
+        merchant_language_objects = [
+            {"id": "00", "value": "EN"},
+            {"id": "01", "value": config.get("merchant_name", "MERCHANT")}
+        ]
+        payload += self.encode_tlv("64", self.encode_nested_tlv(merchant_language_objects))
+
+        # 14. Calculate and append CRC
         crc = self.calculate_crc16(payload)
         payload += self.encode_tlv("63", crc)
         
@@ -249,13 +325,14 @@ class SGQRGenerator:
         
         return output_file
     
-    def parse_payload(self, payload: str) -> List[Dict[str, Any]]:
+    def parse_payload(self, payload: str, parent_tag: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Parse SGQR payload string back to structured format
         (Useful for validation and debugging)
         
         Args:
             payload: SGQR payload string
+            parent_tag: Optional tag of the parent structure for context
             
         Returns:
             List of parsed data objects
@@ -283,14 +360,15 @@ class SGQRGenerator:
             # Store the parsed object
             obj = {
                 "id": tag,
+                "name": self.get_tag_name(tag, parent_tag),
                 "length": str(length).zfill(2),
                 "value": value
             }
             
             # Parse nested objects for certain tags
-            if tag in ["26", "27", "28", "29", "30", "31", "32", "33", "51"]:
+            if tag in self.MERCHANT_ACCOUNT_TAGS or tag in {"51", "62", "64"}:
                 # These contain nested TLV data
-                obj["dataObjects"] = self.parse_payload(value)
+                obj["dataObjects"] = self.parse_payload(value, parent_tag=tag)
             
             result.append(obj)
             
@@ -298,6 +376,31 @@ class SGQRGenerator:
             i = value_end
             
         return result
+
+    def get_tag_name(self, tag: str, parent_tag: Optional[str] = None) -> str:
+        """Return descriptive name for a tag using context-specific mappings."""
+        if parent_tag is None:
+            if tag in self.TOP_LEVEL_TAG_NAMES:
+                return self.TOP_LEVEL_TAG_NAMES[tag]
+            if tag in self.MERCHANT_ACCOUNT_TAGS:
+                return f"Merchant Account Information ({tag})"
+            return f"Unknown Tag {tag}"
+
+        if parent_tag in self.MERCHANT_ACCOUNT_TAGS:
+            if tag == "00":
+                return "Global Unique Identifier"
+            return f"Payment System Specific Data ({tag})"
+
+        if parent_tag == "51":
+            return self.SGQR_ID_SUBTAG_NAMES.get(tag, f"SGQR ID Data ({tag})")
+
+        if parent_tag == "62":
+            return self.ADDITIONAL_DATA_SUBTAG_NAMES.get(tag, f"Additional Data ({tag})")
+
+        if parent_tag == "64":
+            return self.MERCHANT_LANGUAGE_SUBTAG_NAMES.get(tag, f"Merchant Information - Language ({tag})")
+
+        return self.TOP_LEVEL_TAG_NAMES.get(tag, f"Unknown Tag {tag}")
 
 
 def main():

@@ -9,6 +9,11 @@
   "comment": "11=Static QR, 12=Dynamic QR.",
   "amount": "1.00",
   "output_file": "sample_sgqr.png",
+  "additional_data": {
+    "01": "INV-1001",
+    "05": "SAMPLE MERCHANT",
+    "07": "8ff9e12bacaf485abac0a7cef"
+  },
   "sgqr_id": {
     "sgqr_number": "",
     "version": "",
